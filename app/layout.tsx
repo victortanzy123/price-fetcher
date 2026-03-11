@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { Footer } from "@/components/Footer";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -26,9 +27,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${robotoMono.variable} antialiased flex h-screen overflow-hidden`}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-[var(--bg-page)]">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col overflow-y-auto bg-[var(--bg-page)]">
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
       </body>
     </html>
   );

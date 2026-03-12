@@ -17,7 +17,7 @@ const NAV_ITEMS = [
     label: "Yahoo Finance",
     href: "/yahoo",
     icon: TrendingUp,
-    available: false,
+    available: true,
     description: "Stock & ETF prices",
   },
   {
@@ -154,7 +154,7 @@ export function Sidebar() {
           color: "var(--text-secondary)",
         }}
       >
-        <div>Binance public API</div>
+        <div>Binance · Yahoo Finance</div>
         <div className="mt-0.5" style={{ color: "var(--border)" }}>
           no key required
         </div>

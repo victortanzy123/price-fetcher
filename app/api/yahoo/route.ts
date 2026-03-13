@@ -54,8 +54,8 @@ async function fetchYahooClose(
   period1.setUTCDate(period1.getUTCDate() - 7);
 
   const result = await yf.chart(ticker, {
-    period1: period1.toISOString().slice(0, 10),
-    period2: period2.toISOString().slice(0, 10),
+    period1,
+    period2,
     interval: "1d",
   });
 

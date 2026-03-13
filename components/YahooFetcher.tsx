@@ -80,9 +80,23 @@ const POPULAR_TICKERS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getYesterdayDate(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
+function getLastTradingDay(): string {
+  const now = new Date();
+  const d = new Date(now);
+  // Start from today. If today's US session has already closed (after 21:30 UTC),
+  // today is the last concluded trading day. Otherwise, go back to yesterday.
+  // Either way, skip weekends.
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+  const todaySessionClosed = utcHour > 21 || (utcHour === 21 && utcMinute >= 30);
+  if (!todaySessionClosed) {
+    // Today's session hasn't closed yet — step back to yesterday
+    d.setUTCDate(d.getUTCDate() - 1);
+  }
+  // Skip back past Sunday (0) and Saturday (6)
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+    d.setUTCDate(d.getUTCDate() - 1);
+  }
   return (
     d.getUTCFullYear() +
     "-" +
@@ -144,9 +158,9 @@ function TickerChip({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function YahooFetcher() {
-  const [tickers, setTickers] = useState<string[]>(["^GSPC", "NVDA", "AAPL", "GC=F"]);
+  const [tickers, setTickers] = useState<string[]>(["^GSPC", "NVDA", "AAPL", "GC=F", "CL=F"]);
   const [inputVal, setInputVal] = useState("");
-  const [dateStr, setDateStr] = useState(getYesterdayDate());
+  const [dateStr, setDateStr] = useState(getLastTradingDay());
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Result[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -472,7 +486,7 @@ export function YahooFetcher() {
             </div>
             <button
               type="button"
-              onClick={() => setDateStr(getYesterdayDate())}
+              onClick={() => setDateStr(getLastTradingDay())}
               className="text-xs px-3 py-2.5 rounded-lg transition-colors"
               style={{
                 backgroundColor: "var(--bg-page)",
@@ -488,7 +502,7 @@ export function YahooFetcher() {
                 (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
               }}
             >
-              Yesterday
+              Last Trading Day
             </button>
           </div>
           {dateError && (
@@ -496,6 +510,38 @@ export function YahooFetcher() {
               {dateError}
             </p>
           )}
+
+          {/* Date rationale disclaimer */}
+          {(() => {
+            const now = new Date();
+            const utcHour = now.getUTCHours();
+            const utcMinute = now.getUTCMinutes();
+            const todaySessionClosed = utcHour > 21 || (utcHour === 21 && utcMinute >= 30);
+            const nowUtcStr = `${String(utcHour).padStart(2, "0")}:${String(utcMinute).padStart(2, "0")} UTC`;
+            return (
+              <div
+                className="mt-3 flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-xs"
+                style={{
+                  backgroundColor: "rgba(226,183,20,0.06)",
+                  border: "1px solid rgba(226,183,20,0.15)",
+                }}
+              >
+                <span className="mt-px shrink-0 text-[10px]" style={{ color: "var(--accent)" }}>◈</span>
+                <span style={{ color: "var(--text-secondary)", lineHeight: "1.6" }}>
+                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>
+                    {todaySessionClosed ? "Today's session concluded." : "Today's session still open."}
+                  </span>
+                  {" "}US markets close at{" "}
+                  <span style={{ color: "var(--text-primary)" }}>21:00 UTC</span>
+                  {" "}(4 pm ET). It is currently{" "}
+                  <span style={{ color: "var(--text-primary)" }}>{nowUtcStr}</span>
+                  {todaySessionClosed
+                    ? " — today's data is available. Defaulting to today."
+                    : " — yesterday's session was the last to conclude. Defaulting to yesterday."}
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Fetch button */}

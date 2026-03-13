@@ -76,9 +76,17 @@ const POPULAR_PAIRS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-function getYesterdayUtc(): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
+function getLastTradingDayUtc(): string {
+  const now = new Date();
+  const d = new Date(now);
+  // The 23:59 UTC candle closes at 23:59:59 UTC. It's available from 00:00 UTC the next day.
+  // In the first minute past midnight (00:00 UTC) go back 2 days to be safe; otherwise 1 day.
+  const daysBack = now.getUTCHours() === 0 && now.getUTCMinutes() === 0 ? 2 : 1;
+  d.setUTCDate(d.getUTCDate() - daysBack);
+  // Skip back past Sunday (0) and Saturday (6)
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
+    d.setUTCDate(d.getUTCDate() - 1);
+  }
   return (
     d.getUTCFullYear() +
     "-" +
@@ -186,7 +194,7 @@ function StatusBadge({ result }: { result: Result }) {
 export function BinanceFetcher() {
   const [pairs, setPairs] = useState<string[]>(["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]);
   const [inputVal, setInputVal] = useState("");
-  const [dtStr, setDtStr] = useState(getYesterdayUtc());
+  const [dtStr, setDtStr] = useState(getLastTradingDayUtc());
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Result[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -494,7 +502,7 @@ export function BinanceFetcher() {
             </div>
             <button
               type="button"
-              onClick={() => setDtStr(getYesterdayUtc())}
+              onClick={() => setDtStr(getLastTradingDayUtc())}
               className="text-xs px-3 py-2.5 rounded-lg transition-colors"
               style={{
                 backgroundColor: "var(--bg-page)",
@@ -510,7 +518,7 @@ export function BinanceFetcher() {
                 (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
               }}
             >
-              Yesterday
+              Last Trading Day
             </button>
           </div>
           {dtError && (
